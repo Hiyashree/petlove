@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kawaii Virtual Pet Cat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+ 
+  .glitter-particle {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    pointer-events: none;
+    background: radial-gradient(circle, #ffccf9, #ff66cc);
+    border-radius: 50%;
+    opacity: 0.8;
+    box-shadow: 0 0 6px #ffccf9, 0 0 10px #ff66cc;
+    animation: fadeOut 1s ease-out forwards;
+    z-index: 9999;
+  }
+
+  @keyframes fadeOut {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(0.2) translateY(-10px);
+      opacity: 0;
+    }
+  }
+
+
+    body {
+      background: url('images/backgrounds/default-bg.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Comic Sans MS', cursive;
+      overflow: hidden;
+      cursor: url('https://cur.cursors-4u.net/cursors/cur-13/cur1121.cur'), auto;
+    }
+
+    .pixel-art {
+      image-rendering: pixelated;
+    }
+
+    .bounce {
+      animation: bounce 0.5s;
+    }
+
+    @keyframes bounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .floaty {
+      animation: floaty 3s ease-in-out infinite;
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .talk-bubble {
+      position: absolute;
+      background: #fff0f6;
+      border: 2px dashed #ff69b4;
+      border-radius: 15px;
+      padding: 10px;
+      max-width: 200px;
+      text-align: center;
+      font-size: 14px;
+      font-style: italic;
+      box-shadow: 0 0 10px pink;
+      animation: fadeInOut 3s ease-in-out;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      20%, 80% { opacity: 1; }
+    }
+
+    .energy-bar {
+      width: 100%;
+      height: 10px;
+      background: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 10px pink;
+    }
+
+    .energy {
+      height: 100%;
+      background: linear-gradient(90deg, #ffcccb, #ff69b4, #ffcccb);
+      background-size: 200% auto;
+      animation: shimmer 2s infinite linear;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 0% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    button {
+      box-shadow: 0 0 8px rgba(255, 192, 203, 0.6);
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px rgba(255, 105, 180, 0.8);
+    }
+
+    .sparkle {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      background: url('https://cdn.pixabay.com/photo/2013/07/12/13/58/sparkle-147292_960_720.png');
+      animation: float 15s linear infinite;
+      opacity: 0.3;
+      z-index: 0;
+    }
+
+    @keyframes float {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100%); }
+    }
+
+    .sleeping {
+      opacity: 0.8;
+      filter: grayscale(60%);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+   <audio id="bgm" loop></audio>
+
+<button id="toggle-btn" onclick="toggleMusic()">▶️ Start Music</button>
+<button id="next-btn" onclick="nextTrack()" style="display: none;">⏭️ Next Track</button>
+
+  <!-- Sparkles & Title -->
+  <div class="sparkle"></div>
+  <h1 class="text-pink-500 text-4xl mb-4 font-bold pulse">Kawaii Virtual Pet</h1>
+
+  <!-- Pet Card -->
+  <div id="pet-container" class="bg-white bg-opacity-80 rounded-2xl shadow-xl p-6 text-center max-w-sm w-full relative z-10">
+    <div id="talkBubble" class="talk-bubble hidden"></div>
+    <img id="pet" src="images/outfits/default.jpg" class="mx-auto pixel-art w-56 h-56 transition-all floaty" alt="Virtual Pet" />
+    <span id="zzz" class="absolute top-6 left-1/2 transform -translate-x-1/2 text-3xl hidden">💤</span>
+    <h2 class="text-xl mt-2" id="pet-name">Plushy</h2>
+    <p class="text-sm">Level: <span id="level">1</span> | Coins: <span id="coins">0</span> 🪙</p>
+
+    <div class="mt-2">
+      <div class="energy-bar">
+        <div id="energy" class="energy w-full"></div>
+      </div>
+      <p class="text-xs text-gray-700">Energy</p>
+    </div>
+
+    <div class="flex justify-around my-4">
+      <button onclick="interact('feed')" class="bg-pink-300 hover:bg-pink-400 rounded-full px-4 py-2 text-white">🍓 Feed</button>
+      <button onclick="interact('bath')" class="bg-blue-300 hover:bg-blue-400 rounded-full px-4 py-2 text-white">🛁 Bathe</button>
+      <button onclick="interact('play')" class="bg-yellow-300 hover:bg-yellow-400 rounded-full px-4 py-2 text-white">🎈 Play</button>
+    </div>
+
+    <p class="text-sm text-gray-700">Mood: <span id="pet-mood">Happy</span></p>
+
+    <div class="mt-6">
+      <h3 class="text-pink-600 font-semibold mb-2">Outfit Selector:</h3>
+      <select id="outfitSelect" onchange="changeOutfit(this.value)" class="rounded-lg p-2 bg-purple-200">
+        <option value="default">Default</option>
+        <option value="bow">🎀 Bow Outfit</option>
+        <option value="hat">🎩 Hat Outfit</option>
+      </select>
+      <button onclick="unlockBackground()" class="bg-green-300 hover:bg-green-400 rounded-full px-4 py-2 text-white mt-3">
+        🌸 Change Background
+      </button>
+    </div>
+  </div>
+
+  <audio id="feedSound" src="music/feed.mp3" preload="auto"></audio>
+<audio id="bathSound" src="music/bath.mp3" preload="auto"></audio>
+<audio id="playSound" src="music/play.mp3" preload="auto"></audio>
+<audio id="outfitSound" src="music/outfit.mp3" preload="auto"></audio>
+<audio id="bgSound" src="music/bg-change.mp3" preload="auto"></audio>
+
+
+  <script>
+    const pet = document.getElementById('pet');
+    const mood = document.getElementById('pet-mood');
+    const sound = document.getElementById('sound');
+    const meow = document.getElementById('meow');
+    const level = document.getElementById('level');
+    const coins = document.getElementById('coins');
+    const energy = document.getElementById('energy');
+    const bubble = document.getElementById('talkBubble');
+    const zzz = document.getElementById('zzz');
+    const bgSound = document.getElementById('bgSound');
+
+
+
+    let xp = 0, coinCount = 0, petEnergy = 100;
+    let currentOutfit = 'default';
+    let sleepMode = false;
+    let lastAwakeImage;
+    
+
+    const feedImages = [...Array(9)].map((_, i) => `images/feed/${i}.jpg`);
+    const bathImages = [...Array(7)].map((_, i) => `images/bath/${i}.jpg`);
+    const playImages = [...Array(7)].map((_, i) => `images/play/${i}.jpg`);
+    const backgrounds = [...Array(7)].map((_, i) => `images/backgrounds/${i}.jpg`);
+    backgrounds.unshift('images/backgrounds/default-bg.jpg');
+
+    const sayings = [
+      "I love strawberries! 🍓",
+      "You're my bestie! 💖",
+      "Can we play now? 🎮",
+      "I'm feeling super cute~ ✨",
+      "More cuddles please! 🥺",
+      "I smell treats... 👃",
+      "Wanna dress me up? 👗"
+    ];
+
+    function showBubble() {
+      if (!sleepMode) {
+        bubble.innerText = sayings[Math.floor(Math.random() * sayings.length)];
+        bubble.classList.remove("hidden");
+        setTimeout(() => bubble.classList.add("hidden"), 3000);
+      }
+    }
+
+    function interact(type) {
+      if (type === 'feed') {
+  document.getElementById('feedSound').currentTime = 0;
+  document.getElementById('feedSound').play();
+} else if (type === 'bath') {
+  document.getElementById('bathSound').currentTime = 0;
+  document.getElementById('bathSound').play();
+} else if (type === 'play') {
+  document.getElementById('playSound').currentTime = 0;
+  document.getElementById('playSound').play();
+}
+
+      pet.classList.add('bounce');
+
+      let moodText = 'Happy', xpGain = 10, coinGain = 1, newImage = pet.src;
+
+      if (type === 'feed') {
+        moodText = 'Full & Happy!';
+        petEnergy = Math.min(petEnergy + 10, 100);
+        newImage = feedImages[Math.floor(Math.random() * feedImages.length)];
+      } else if (type === 'bath') {
+        moodText = 'Clean & Cheerful!';
+        petEnergy = Math.min(petEnergy + 5, 100);
+        newImage = bathImages[Math.floor(Math.random() * bathImages.length)];
+      } else if (type === 'play') {
+        moodText = 'Excited & Joyful!';
+        petEnergy = Math.max(petEnergy - 15, 0);
+        xpGain = 20;
+        coinGain = 5;
+        newImage = playImages[Math.floor(Math.random() * playImages.length)];
+      }
+
+      if (!sleepMode) {
+  pet.src = newImage;
+  lastAwakeImage = newImage;
+}
+
+      xp += xpGain;
+      coinCount += coinGain;
+      coins.innerText = coinCount;
+      updateEnergyBar();
+      updateLevel();
+
+      if (petEnergy < 20) {
+        enterSleepMode();
+      } else {
+        exitSleepMode();
+        mood.innerText = moodText;
+        showBubble();
+      }
+
+      setTimeout(() => {
+  if (!sleepMode) pet.src = `images/outfits/${currentOutfit}.jpg`;
+}, 2000);
+
+      setTimeout(() => pet.classList.remove('bounce'), 500);
+    }
+
+    function updateLevel() {
+      level.innerText = Math.floor(xp / 100) + 1;
+    }
+
+    function updateEnergyBar() {
+      energy.style.width = petEnergy + '%';
+    }
+
+    function changeOutfit(outfit) {
+      currentOutfit = outfit;
+      lastAwakeImage = `images/outfits/${currentOutfit}.jpg`;
+
+      pet.src = lastAwakeImage;
+      meow.currentTime = 0;
+      document.getElementById('outfitSound').currentTime = 0;
+document.getElementById('outfitSound').play();
+
+      showBubble();
+    }
+
+    function unlockBackground() {
+  const randomBg = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+  document.body.style.backgroundImage = `url('${randomBg}')`;
+  mood.innerText = 'Loving the new view! 🌸';
+
+  bgSound.currentTime = 0;
+  bgSound.play();
+
+  showBubble();
+}
+
+
+    function enterSleepMode() {
+  if (!sleepMode) {
+    sleepMode = true;
+    pet.classList.add('sleeping');
+    zzz.classList.remove('hidden');
+    mood.innerText = 'Zzz...';
+    lastAwakeImage = pet.src;
+    pet.src = 'images/outfits/sleeping.jpg'; // your sleeping image
+  }
+}
+
+function exitSleepMode() {
+  if (sleepMode) {
+    sleepMode = false;
+    pet.classList.remove('sleeping');
+    zzz.classList.add('hidden');
+    pet.src = lastAwakeImage; // restore the last active image
+  }
+}
+
+
+
+    document.getElementById('pet-container').addEventListener('click', e => {
+      const heart = document.createElement('div');
+      heart.innerText = '💖';
+      heart.style.position = 'absolute';
+      heart.style.left = `${e.pageX}px`;
+      heart.style.top = `${e.pageY}px`;
+      heart.style.fontSize = '24px';
+      heart.style.opacity = 1;
+      heart.style.transition = 'all 1s ease-out';
+      heart.style.zIndex = 9999;
+      document.body.appendChild(heart);
+      setTimeout(() => {
+        heart.style.top = `${e.pageY - 100}px`;
+        heart.style.opacity = 0;
+      }, 10);
+      setTimeout(() => heart.remove(), 1000);
+    });
+
+     document.body.addEventListener('click', (e) => {
+  if (Math.random() < 0.2) {
+    const treat = document.createElement('img');
+    treat.src = 'images/feed/candy.jpeg';
+    treat.style = `position:absolute;top:${e.pageY}px;left:${e.pageX}px;width:60px;height:60px;transition:top 1s ease-in;z-index:10;`;
+    document.body.appendChild(treat);
+    setTimeout(() => {
+      treat.style.top = `${e.pageY + 100}px`;
+      coinCount += 2;
+      coins.innerText = coinCount;
+      treat.remove();
+    }, 1000);
+  }
+});
+const hour = new Date().getHours();
+if (hour >= 18 || hour < 6) {
+  document.body.style.backgroundImage = "url('images/backgrounds/night.jpg')";
+  mood.innerText = "Sleepy vibes... 🌙";
+}
+
+ 
+
+ 
+  function createGlitter(x, y) {
+    const glitter = document.createElement("div");
+    glitter.className = "glitter-particle";
+
+    const offsetX = (Math.random() - 0.5) * 8;
+    const offsetY = (Math.random() - 0.5) * 8;
+
+    glitter.style.left = `${x + offsetX}px`;
+    glitter.style.top = `${y + offsetY}px`;
+
+    document.body.appendChild(glitter);
+
+    setTimeout(() => {
+      glitter.remove();
+    }, 1200);
+  }
+
+  // Desktop mouse
+  document.addEventListener("mousemove", function (e) {
+    createGlitter(e.clientX, e.clientY);
+  });
+
+  // Mobile touch
+  document.addEventListener("touchmove", function (e) {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      createGlitter(touch.clientX, touch.clientY);
+    }
+  });
+
+
+
+  const musicTracks = [
+    "music/lofi1.mp3",
+    "music/lofi2.mp3",
+    "music/lofi3.mp3",
+    "music/lofi4.mp3",
+    "music/lofi5.mp3",
+    "music/lofi6.mp3",
+  ];
+
+  let currentTrack = 0;
+  let isPlaying = false;
+
+  const bgm = document.getElementById('bgm');
+  const toggleBtn = document.getElementById('toggle-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  function toggleMusic() {
+    if (!isPlaying) {
+      bgm.src = musicTracks[currentTrack];
+      bgm.play();
+      toggleBtn.innerText = "⏸️ Pause Music";
+      nextBtn.style.display = "inline-block";
+      isPlaying = true;
+    } else {
+      if (bgm.paused) {
+        bgm.play();
+        toggleBtn.innerText = "⏸️ Pause Music";
+      } else {
+        bgm.pause();
+        toggleBtn.innerText = "▶️ Play Music";
+      }
+    }
+  }
+
+  function nextTrack() {
+    currentTrack = (currentTrack + 1) % musicTracks.length;
+    bgm.src = musicTracks[currentTrack];
+    bgm.play();
+    toggleBtn.innerText = "⏸️ Pause Music";
+  }
+
+
+
+
+
+  </script>
+</body>
+</html>
